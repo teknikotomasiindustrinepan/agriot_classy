@@ -1,279 +1,320 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AGRIOT-CLASSY | SMKN 1 JAPARA</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;700&display=swap');
-        body { background: #0f172a; font-family: 'Plus Jakarta Sans', sans-serif; overflow-x: hidden; }
-        .bg-gradient { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; background: radial-gradient(circle at 0% 0%, rgba(30, 64, 175, 0.15) 0%, transparent 50%), radial-gradient(circle at 100% 100%, rgba(59, 130, 246, 0.1) 0%, transparent 50%), #0f172a; }
-        .glass-morphism { background: rgba(30, 41, 59, 0.6); backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.08); box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); }
-        .input-style { background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(71, 85, 105, 0.5); transition: all 0.3s ease; font-size: 0.875rem; }
-        .input-style:focus { border-color: #3b82f6; box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1); outline: none; }
-        .tab-active { border-bottom: 2px solid #3b82f6; color: white; }
-        .hidden { display: none; }
-        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Smart Lamp - AGRIOT V1.0 - SMK Negeri 1 Japara</title>
+  <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    :root {
+      --on-color: #fbbf24;
+      --off-color: #94a3b8;
+    }
+
+    body {
+      background-image: linear-gradient(rgba(15, 23, 42, 0.85), rgba(15, 23, 42, 0.85)), 
+                        url('https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80');
+      background-size: cover;
+      background-position: center;
+      background-attachment: fixed;
+      transition: all 0.3s ease;
+      font-family: 'Inter', sans-serif;
+    }
+
+    .glass-morphism {
+      background: rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .bulb-container {
+      position: relative;
+      width: 100px;
+      height: 100px;
+      margin: 0 auto 1.5rem;
+    }
+
+    .bulb-svg {
+      width: 100%;
+      height: 100%;
+      transition: all 0.3s ease;
+    }
+
+    .status-on .bulb-glow {
+      fill: var(--on-color);
+      filter: drop-shadow(0 0 20px rgba(251, 191, 36, 1));
+    }
+
+    .status-off .bulb-glow {
+      fill: rgba(226, 232, 240, 0.3);
+    }
+
+    canvas {
+      max-height: 180px;
+    }
+  </style>
 </head>
-<body class="flex flex-col items-center justify-center min-h-screen p-4">
-    <div class="bg-gradient"></div>
+<body class="flex flex-col items-center justify-center min-h-screen p-6 space-y-6">
 
-    <div class="z-10 w-full max-w-lg p-8 glass-morphism rounded-3xl shadow-2xl">
-        <!-- Header dengan Logo -->
-        <div class="text-center mb-6">
-            <div class="bg-white/5 p-4 rounded-2xl inline-block mb-4 border border-white/10 shadow-inner">
-                <img src="https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEj7G8H2e_hI6_8Gz9Nq9y_z-R6q1jO-n9H6U9Rz_r9g/s250/SMKJAPARA.png" alt="Logo SMKN 1 Japara" class="h-24 mx-auto object-contain">
-            </div>
-            <h1 class="text-3xl font-extrabold text-white">AGRIOT<span class="text-blue-500 font-light">-CLASSY</span></h1>
-            <p class="text-slate-400 text-[10px] uppercase tracking-[0.3em] mt-1 font-bold text-center">SMK NEGERI 1 JAPARA</p>
-        </div>
+  <!-- Card Utama -->
+  <div class="glass-morphism rounded-3xl shadow-2xl p-8 w-full max-w-md text-center text-white">
+    <header class="mb-6">
+      <h1 class="text-3xl font-black tracking-tight leading-tight">Smart Lamp <span class="text-blue-400 block text-xl">"AGRIOT V1.0"</span></h1>
+      <p class="text-xs font-semibold text-blue-200 mt-1 uppercase tracking-widest text-center">SMK Negeri 1 Japara</p>
+      
+      <div id="mqtt-status-pill" class="inline-flex items-center px-3 py-1 mt-4 rounded-full text-[10px] font-bold bg-red-500/20 text-red-300 border border-red-500/50 uppercase tracking-tighter">
+        <span id="mqtt-dot" class="w-2 h-2 mr-2 rounded-full bg-red-500 animate-pulse"></span>
+        <span id="mqtt-text">MQTT Disconnected</span>
+      </div>
+    </header>
 
-        <!-- Navigasi Tab -->
-        <div class="flex border-b border-slate-700/50 mb-6">
-            <button onclick="switchTab('login')" id="tabLogin" class="flex-1 py-3 text-xs font-bold text-slate-400 tab-active tracking-widest uppercase">Masuk</button>
-            <button onclick="switchTab('register')" id="tabRegister" class="flex-1 py-3 text-xs font-bold text-slate-400 tracking-widest uppercase">Daftar</button>
-            <button onclick="switchTab('admin')" id="tabAdmin" class="flex-1 py-3 text-xs font-bold text-slate-400 tracking-widest uppercase">Admin</button>
-        </div>
-
-        <!-- Form Login -->
-        <div id="formLogin">
-            <form id="loginForm" class="space-y-4">
-                <div class="relative">
-                    <i class="fas fa-user absolute left-4 top-4 text-slate-500 text-xs"></i>
-                    <input type="text" id="l-user" required class="w-full pl-10 pr-4 py-3.5 input-style text-white rounded-xl" placeholder="Username">
-                </div>
-                <div class="relative">
-                    <i class="fas fa-lock absolute left-4 top-4 text-slate-500 text-xs"></i>
-                    <input type="password" id="l-pass" required class="w-full pl-10 pr-4 py-3.5 input-style text-white rounded-xl" placeholder="Password">
-                </div>
-                <button type="submit" class="w-full py-4 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl transition-all shadow-lg shadow-blue-500/20 uppercase text-xs tracking-widest">Masuk Ke Sistem</button>
-            </form>
-        </div>
-
-        <!-- Form Daftar -->
-        <div id="formRegister" class="hidden">
-            <form id="registerForm" class="space-y-4">
-                <input type="text" id="r-user" required class="w-full px-4 py-3.5 input-style text-white rounded-xl" placeholder="Buat Username Baru">
-                <input type="password" id="r-pass" required class="w-full px-4 py-3.5 input-style text-white rounded-xl" placeholder="Buat Password">
-                <button type="submit" class="w-full py-4 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl transition-all shadow-lg shadow-indigo-500/20 uppercase text-xs tracking-widest">Kirim Pendaftaran</button>
-                <p class="text-[10px] text-center text-slate-500 leading-relaxed italic">Data Anda akan divalidasi oleh Admin sebelum link akses diberikan.</p>
-            </form>
-        </div>
-
-        <!-- Panel Admin -->
-        <div id="formAdmin" class="hidden">
-            <div id="adminAuth" class="space-y-3">
-                <p class="text-xs text-slate-400 text-center uppercase tracking-widest mb-2 font-semibold">Otoritas Admin Japara</p>
-                <input type="password" id="adminKey" class="w-full px-4 py-3.5 input-style text-white rounded-xl" placeholder="Kode Keamanan Admin">
-                <button onclick="accessAdmin()" class="w-full py-3.5 bg-slate-700 hover:bg-slate-600 text-white font-bold rounded-xl transition-all uppercase text-xs tracking-widest">Buka Panel Kontrol</button>
-            </div>
-            <div id="adminPanel" class="hidden space-y-4">
-                <div class="flex justify-between items-center border-b border-slate-700 pb-2">
-                    <h3 class="text-white font-bold text-xs uppercase tracking-widest">Manajemen Akses User</h3>
-                    <button onclick="location.reload()" class="text-slate-400 hover:text-white text-[10px]"><i class="fas fa-sync"></i> REFRESH</button>
-                </div>
-                <div id="userList" class="max-h-64 overflow-y-auto space-y-3 pr-2 custom-scrollbar">
-                    <!-- Data user muncul di sini -->
-                </div>
-            </div>
-        </div>
-
-        <!-- Footer Partnership -->
-        <div class="mt-8 pt-6 border-t border-slate-800 text-center">
-            <p class="text-[9px] text-slate-500 uppercase tracking-[0.2em] mb-4 text-center font-semibold">Sinergi Industri Bersama</p>
-            <div class="flex justify-center items-center gap-6 opacity-60">
-                <span class="text-[10px] font-bold text-slate-300 block">Schneider Electric</span>
-                <div class="h-3 w-[1px] bg-slate-700"></div>
-                <span class="text-[10px] font-bold text-slate-300 block">BIDEKO</span>
-            </div>
-            <p class="mt-6 text-[10px] font-bold text-slate-400 uppercase tracking-[0.1em] text-center">BY: PENGEMBANG INVASI SMKN 1 JAPARA</p>
-        </div>
+    <div id="lamp-wrapper" class="bulb-container status-off">
+      <svg class="bulb-svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path class="bulb-glow" d="M12,2A7,7,0,0,0,5,9c0,3.11,2.1,5.73,5,6.6V19a2,2,0,0,0,2,2,2,2,0,0,0,2-2V15.6c2.9-.87,5-3.49,5-6.6A7,7,0,0,0,12,2Z" fill="#e2e8f0"/>
+        <path class="bulb-glass" d="M9,21h6v1a1,1,0,0,1-1,1H10a1,1,0,0,1-1-1Z" fill="#94a3b8"/>
+      </svg>
     </div>
 
-    <!-- Notifikasi -->
-    <div id="alertBox" class="fixed bottom-6 right-6 transform translate-x-[150%] transition-transform duration-500 z-50">
-        <div id="alertContent" class="bg-slate-900 border-l-4 px-6 py-4 rounded-xl shadow-2xl flex items-center space-x-3">
-            <span id="alertMsg" class="text-xs text-white font-semibold"></span>
-        </div>
+    <div class="mb-6">
+      <p class="text-blue-200 text-[10px] uppercase tracking-[0.2em] mb-1 opacity-60">Status Real-time</p>
+      <div id="status-text" class="text-4xl font-black text-white/20">OFF</div>
     </div>
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getFirestore, collection, addDoc, getDocs, doc, updateDoc, deleteDoc, onSnapshot, query } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-        import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    <div class="grid grid-cols-2 gap-4 mb-6">
+      <button onclick="lampOn()" class="bg-blue-600 hover:bg-blue-500 active:scale-95 transition-all text-white text-sm font-bold py-4 rounded-2xl shadow-lg shadow-blue-900/50 border border-blue-400/30 uppercase tracking-widest">
+        ON
+      </button>
+      <button onclick="lampOff()" class="bg-white/5 hover:bg-white/10 active:scale-95 transition-all text-white text-sm font-bold py-4 rounded-2xl border border-white/10 uppercase tracking-widest">
+        OFF
+      </button>
+    </div>
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyAU1i_IqjR6vQt-TBNyoKOoxvGG5krHmcc",
-            authDomain: "agriot-classy-japara.firebaseapp.com",
-            projectId: "agriot-classy-japara",
-            storageBucket: "agriot-classy-japara.firebasestorage.app",
-            messagingSenderId: "286188825069",
-            appId: "1:286188825069:web:e4a45b51c58508995b9fe4",
-            measurementId: "G-DHTXSY6RM9"
-        };
+    <!-- Container Grafik -->
+    <div class="mt-4 p-4 bg-black/30 rounded-2xl border border-white/5 text-center">
+      <div class="flex justify-between items-center mb-2">
+        <p class="text-[10px] text-blue-300 uppercase tracking-widest font-bold text-left">Aktivitas Terakhir</p>
+        <button onclick="exportReport()" class="flex items-center gap-1 text-[9px] bg-blue-500/20 hover:bg-blue-500/40 text-blue-300 px-2 py-1 rounded-md border border-blue-500/30 transition-all font-bold">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+          </svg>
+          EXPORT REPORT
+        </button>
+      </div>
+      <canvas id="activityChart"></canvas>
+    </div>
 
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-        const auth = getAuth(app);
-        
-        const appId = 'agriot-classy-japara';
-        const usersRef = collection(db, 'artifacts', appId, 'public', 'data', 'users');
+    <footer class="mt-6 pt-4 border-t border-white/5">
+      <p class="text-[10px] text-white/30 italic uppercase tracking-tighter">Industrial IoT Monitoring System</p>
+    </footer>
+  </div>
 
-        let isAuthed = false;
+  <script>
+    const statusText = document.getElementById("status-text");
+    const lampWrapper = document.getElementById("lamp-wrapper");
+    const mqttText = document.getElementById("mqtt-text");
+    const mqttDot = document.getElementById("mqtt-dot");
+    const mqttPill = document.getElementById("mqtt-status-pill");
 
-        const showAlert = (msg, type = 'error') => {
-            const box = document.getElementById('alertBox');
-            const content = document.getElementById('alertContent');
-            content.className = `bg-slate-900 border-l-4 px-6 py-4 rounded-xl shadow-2xl flex items-center space-x-3 ${type === 'success' ? 'border-blue-500' : 'border-red-500'}`;
-            document.getElementById('alertMsg').innerText = msg;
-            box.classList.remove('translate-x-[150%]');
-            setTimeout(() => box.classList.add('translate-x-[150%]'), 5000);
-        };
+    const fullHistory = [];
+    const TOPIC_STATUS = "lampu/esp32_01/status";
 
-        const initAuth = async () => {
-            try {
-                await signInAnonymously(auth);
-                isAuthed = true;
-                console.log("Koneksi Database Aktif");
-            } catch (error) {
-                console.error(error);
-                showAlert("Gagal inisialisasi koneksi database.");
-            }
-        };
-
-        initAuth();
-
-        window.switchTab = (tab) => {
-            ['formLogin', 'formRegister', 'formAdmin'].forEach(id => document.getElementById(id).classList.add('hidden'));
-            ['tabLogin', 'tabRegister', 'tabAdmin'].forEach(id => document.getElementById(id).classList.remove('tab-active'));
-            document.getElementById('form' + tab.charAt(0).toUpperCase() + tab.slice(1)).classList.remove('hidden');
-            document.getElementById('tab' + tab.charAt(0).toUpperCase() + tab.slice(1)).classList.add('tab-active');
-        };
-
-        // Pendaftaran Akun
-        document.getElementById('registerForm').onsubmit = async (e) => {
-            e.preventDefault();
-            if(!isAuthed) return showAlert("Menghubungkan ke server...");
-            
-            const username = document.getElementById('r-user').value.trim();
-            const password = document.getElementById('r-pass').value;
-            try {
-                const snap = await getDocs(usersRef);
-                if (snap.docs.some(d => d.data().username.toLowerCase() === username.toLowerCase())) {
-                    return showAlert("Username sudah terdaftar!");
-                }
-                await addDoc(usersRef, { 
-                    username, 
-                    password, 
-                    targetLink: "", 
-                    createdAt: new Date().toISOString() 
-                });
-                showAlert("Pendaftaran berhasil! Tunggu Admin mengisi link akses Anda.", "success");
-                document.getElementById('registerForm').reset();
-                switchTab('login');
-            } catch(e) { 
-                showAlert("Terjadi kesalahan saat mendaftar."); 
-            }
-        };
-
-        // Login User & Redirect
-        document.getElementById('loginForm').onsubmit = async (e) => {
-            e.preventDefault();
-            if(!isAuthed) return showAlert("Koneksi belum siap.");
-
-            const u = document.getElementById('l-user').value.trim();
-            const p = document.getElementById('l-pass').value;
-            try {
-                const snap = await getDocs(usersRef);
-                const userDoc = snap.docs.find(d => d.data().username === u && d.data().password === p);
-                
-                if(userDoc) {
-                    const data = userDoc.data();
-                    if(!data.targetLink || data.targetLink.trim() === "") {
-                        return showAlert("Maaf, Admin belum memberikan link akses untuk akun Anda.");
-                    }
-                    
-                    showAlert("Login Berhasil! Mengalihkan...", "success");
-                    setTimeout(() => {
-                        let finalUrl = data.targetLink.trim();
-                        if (!finalUrl.startsWith('http')) finalUrl = 'https://' + finalUrl;
-                        window.location.href = finalUrl;
-                    }, 1200);
-                } else {
-                    showAlert("Username atau Password salah.");
-                }
-            } catch(e) { 
-                showAlert("Gagal menghubungi database."); 
-            }
-        };
-
-        // Akses Admin Panel
-        window.accessAdmin = () => {
-            if(document.getElementById('adminKey').value === "japara-admin") {
-                document.getElementById('adminAuth').classList.add('hidden');
-                document.getElementById('adminPanel').classList.remove('hidden');
-                loadUsers();
-            } else {
-                showAlert("Kode Keamanan Admin Salah!");
-            }
-        };
-
-        // Load & Update User (ADMIN)
-        function loadUsers() {
-            if(!isAuthed) return;
-            onSnapshot(query(usersRef), (snap) => {
-                const list = document.getElementById('userList');
-                list.innerHTML = "";
-                
-                if(snap.empty) {
-                    list.innerHTML = `<p class="text-[10px] text-slate-500 text-center py-4">Belum ada user yang mendaftar.</p>`;
-                    return;
-                }
-
-                snap.forEach(docSnap => {
-                    const d = docSnap.data();
-                    const el = document.createElement('div');
-                    el.className = "p-4 bg-slate-900/60 border border-slate-800 rounded-2xl space-y-3 shadow-sm";
-                    el.innerHTML = `
-                        <div class="flex justify-between items-start">
-                            <div class="overflow-hidden">
-                                <p class="text-white text-xs font-bold uppercase truncate">${d.username}</p>
-                                <p class="text-[9px] text-slate-500 font-mono">PWD: ${d.password}</p>
-                            </div>
-                            <button onclick="deleteUser('${docSnap.id}')" class="text-slate-600 hover:text-red-500 transition-colors p-1"><i class="fas fa-trash-alt text-[10px]"></i></button>
-                        </div>
-                        <div class="flex gap-2">
-                            <input type="text" id="link-${docSnap.id}" value="${d.targetLink || ''}" placeholder="Masukkan URL khusus user..." class="flex-1 bg-slate-950 border border-slate-800 text-[10px] px-3 py-2 rounded-lg text-blue-400 focus:outline-none focus:border-blue-500">
-                            <button onclick="updateLink('${docSnap.id}')" class="bg-blue-600 px-3 py-1 rounded-lg text-[10px] font-bold text-white hover:bg-blue-500 transition-all">SET</button>
-                        </div>`;
-                    list.appendChild(el);
-                });
-            });
+    // Inisialisasi Chart.js
+    const ctx = document.getElementById('activityChart').getContext('2d');
+    const activityChart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: [],
+        datasets: [{
+          label: 'Status',
+          data: [],
+          borderColor: '#60a5fa',
+          backgroundColor: 'rgba(96, 165, 250, 0.2)',
+          borderWidth: 2,
+          pointRadius: 3,
+          stepped: true,
+          fill: true,
+          tension: 0
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { display: true, grid: { display: false }, ticks: { color: 'rgba(255,255,255,0.3)', font: { size: 9 } } },
+          y: {
+            min: -0.1, max: 1.1,
+            ticks: {
+              stepSize: 1,
+              color: 'rgba(255,255,255,0.3)',
+              callback: function(value) { return value === 1 ? 'ON' : 'OFF'; }
+            },
+            grid: { color: 'rgba(255,255,255,0.05)' }
+          }
         }
+      }
+    });
 
-        window.updateLink = async (id) => {
-            try {
-                const newLink = document.getElementById(`link-${id}`).value.trim();
-                await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'users', id), { 
-                    targetLink: newLink 
-                });
-                showAlert("Link berhasil dikaitkan ke akun!", "success");
-            } catch(e) { showAlert("Gagal menyimpan link."); }
-        };
+    function addDataToChart(status) {
+      const now = new Date();
+      const timeStr = now.toLocaleTimeString('id-ID');
+      const dateStr = now.toLocaleDateString('id-ID');
+      const val = status === "ON" ? 1 : 0;
 
-        window.deleteUser = async (id) => {
-            if(confirm("Hapus pengguna ini? Semua data pendaftaran mereka akan hilang.")) {
-                try {
-                    await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'users', id));
-                    showAlert("Akun dihapus.", "success");
-                } catch(e) { showAlert("Gagal menghapus akun."); }
-            }
-        };
-    </script>
+      fullHistory.push({ 
+        tanggal: dateStr, 
+        waktu: timeStr, 
+        topic: TOPIC_STATUS, 
+        status: status,
+        rawVal: val
+      });
+
+      activityChart.data.labels.push(timeStr);
+      activityChart.data.datasets[0].data.push(val);
+
+      if (activityChart.data.labels.length > 10) {
+        activityChart.data.labels.shift();
+        activityChart.data.datasets[0].data.shift();
+      }
+      activityChart.update();
+    }
+
+    function exportReport() {
+      if (fullHistory.length === 0) {
+        alert("Belum ada data history.");
+        return;
+      }
+
+      // Menyiapkan data untuk grafik di dalam file report
+      const labelsJson = JSON.stringify(fullHistory.map(h => h.waktu));
+      const dataJson = JSON.stringify(fullHistory.map(h => h.rawVal));
+      
+      let tableRows = "";
+      fullHistory.forEach(row => {
+        tableRows += `<tr style="border-bottom: 1px solid #ddd;">
+          <td style="padding: 10px;">${row.tanggal}</td>
+          <td style="padding: 10px;">${row.waktu}</td>
+          <td style="padding: 10px; font-family: monospace;">${row.topic}</td>
+          <td style="padding: 10px; font-weight: bold; color: ${row.status === 'ON' ? '#d97706' : '#64748b'}">${row.status}</td>
+        </tr>`;
+      });
+
+      const reportHtml = `
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Report Smart Lamp AGRIOT V1.0</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"><\/script>
+  <style>
+    body { font-family: sans-serif; padding: 40px; color: #333; line-height: 1.6; }
+    .header { text-align: center; border-bottom: 2px solid #3b82f6; padding-bottom: 20px; margin-bottom: 30px; }
+    h1 { margin: 0; color: #1e3a8a; }
+    .chart-container { background: #f8fafc; padding: 20px; border-radius: 12px; border: 1px solid #e2e8f0; margin-bottom: 40px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+    th { background: #3b82f6; color: white; text-align: left; padding: 12px; }
+    .footer { margin-top: 50px; font-size: 12px; text-align: center; color: #94a3b8; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>Laporan Aktivitas Smart Lamp</h1>
+    <p>AGRIOT V1.0 - SMK Negeri 1 Japara</p>
+    <p style="font-size: 12px; color: #64748b;">Dicetak pada: ${new Date().toLocaleString('id-ID')}</p>
+  </div>
+
+  <div class="chart-container">
+    <h3>Grafik Aktivitas</h3>
+    <canvas id="reportChart" style="max-height: 300px;"></canvas>
+  </div>
+
+  <h3>Detail Log Data</h3>
+  <table>
+    <thead>
+      <tr>
+        <th>Tanggal</th>
+        <th>Waktu</th>
+        <th>Topic MQTT</th>
+        <th>Status</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${tableRows}
+    </tbody>
+  </table>
+
+  <div class="footer">
+    &copy; 2024 AGRIOT System - SMK Negeri 1 Japara. Dokumen ini dibuat secara otomatis oleh sistem.
+  </div>
+
+  <script>
+    const ctx = document.getElementById('reportChart').getContext('2d');
+    new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: ${labelsJson},
+        datasets: [{
+          label: 'Status (1=ON, 0=OFF)',
+          data: ${dataJson},
+          borderColor: '#3b82f6',
+          backgroundColor: 'rgba(59, 130, 246, 0.1)',
+          stepped: true,
+          fill: true,
+          borderWidth: 2
+        }]
+      },
+      options: { scales: { y: { min: -0.1, max: 1.1, ticks: { stepSize: 1 } } } }
+    });
+  <\/script>
+</body>
+</html>`;
+
+      const blob = new Blob([reportHtml], { type: 'text/html' });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = `Report_AGRIOT_${new Date().getTime()}.html`;
+      link.click();
+    }
+
+    const options = { username: "mqtt_user", password: "mqtt_pass", protocol: "wss" };
+    const client = mqtt.connect("wss://broker.hivemq.com:8884/mqtt", options);
+
+    client.on("connect", function () {
+      mqttText.innerText = "MQTT Connected";
+      mqttDot.classList.replace("bg-red-500", "bg-green-400");
+      mqttPill.classList.replace("bg-red-500/20", "bg-green-500/20");
+      mqttPill.classList.replace("text-red-300", "text-green-300");
+      mqttPill.classList.replace("border-red-500/50", "border-green-500/50");
+      client.subscribe(TOPIC_STATUS);
+    });
+
+    client.on("message", function (topic, message) {
+      if (topic === TOPIC_STATUS) {
+        updateUI(message.toString().toUpperCase());
+      }
+    });
+
+    function updateUI(status) {
+      statusText.innerText = status;
+      addDataToChart(status);
+      
+      if (status === "ON") {
+        statusText.classList.remove("text-white/20");
+        statusText.classList.add("text-amber-400", "drop-shadow-[0_0_12px_rgba(251,191,36,0.6)]");
+        lampWrapper.classList.replace("status-off", "status-on");
+      } else {
+        statusText.classList.remove("text-amber-400", "drop-shadow-[0_0_12px_rgba(251,191,36,0.6)]");
+        statusText.classList.add("text-white/20");
+        lampWrapper.classList.replace("status-on", "status-off");
+      }
+    }
+
+    function lampOn() { client.publish("lampu/esp32_01/cmd", "ON"); updateUI("ON"); }
+    function lampOff() { client.publish("lampu/esp32_01/cmd", "OFF"); updateUI("OFF"); }
+
+    client.on("error", (err) => { mqttText.innerText = "Connection Error"; });
+  </script>
 </body>
 </html>
