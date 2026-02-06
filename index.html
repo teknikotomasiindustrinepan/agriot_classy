@@ -27,7 +27,11 @@
         <!-- Header -->
         <div class="text-center mb-6">
             <div class="bg-white/5 p-4 rounded-2xl inline-block mb-4 border border-white/10 shadow-inner">
-                <img src="https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEj7G8H2e_hI6_8Gz9Nq9y_z-R6q1jO-n9H6U9Rz_r9g/s250/SMKJAPARA.png" alt="Logo SMKN 1 Japara" class="h-24 mx-auto object-contain">
+                <!-- URL Logo SMKN 1 Japara -->
+                <img src="https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEj7G8H2e_hI6_8Gz9Nq9y_z-R6q1jO-n9H6U9Rz_r9g/s250/SMKJAPARA.png" 
+                     onerror="this.src='https://upload.wikimedia.org/wikipedia/commons/thumb/c/c3/Logo_SMK_Negeri_1_Japara.png/250px-Logo_SMK_Negeri_1_Japara.png'"
+                     alt="Logo SMKN 1 Japara" 
+                     class="h-24 mx-auto object-contain">
             </div>
             <h1 class="text-3xl font-extrabold text-white">AGRIOT<span class="text-blue-500 font-light">-CLASSY</span></h1>
             <p class="text-slate-400 text-[10px] uppercase tracking-[0.3em] mt-1 font-bold text-center">SMK NEGERI 1 JAPARA</p>
@@ -89,9 +93,11 @@
             <div class="flex justify-center items-center gap-6 opacity-60">
                 <span class="text-[10px] font-bold text-slate-300 block">Schneider Electric</span>
                 <div class="h-3 w-[1px] bg-slate-700"></div>
-                <span class="text-[10px] font-bold text-slate-300 block">BIDEKO</span>
+                <!-- Update Teks Bisnis Digital Ekonomi -->
+                <span class="text-[10px] font-bold text-slate-300 block">Bisnis Digital Ekonomi</span>
             </div>
-            <p class="mt-6 text-[10px] font-bold text-slate-400 uppercase tracking-[0.1em] text-center">BY: PENGEMBANG INVASI SMKN 1 JAPARA</p>
+            <!-- Update Tahun 2025 -->
+            <p class="mt-6 text-[10px] font-bold text-slate-400 uppercase tracking-[0.1em] text-center">© 2025 BY: PENGEMBANG INVASI SMKN 1 JAPARA</p>
         </div>
     </div>
 
@@ -168,7 +174,6 @@
             const password = document.getElementById('r-pass').value;
 
             try {
-                // Cek duplikasi
                 const snap = await getDocs(usersRef);
                 const exists = snap.docs.some(d => d.data().username?.toLowerCase() === username.toLowerCase());
                 
@@ -178,7 +183,6 @@
                     return showAlert("Username sudah terdaftar!");
                 }
 
-                // Tambah data ke Firestore
                 await addDoc(usersRef, { 
                     username: username, 
                     password: password, 
@@ -191,18 +195,14 @@
                 setTimeout(() => switchTab('login'), 1500);
             } catch(e) { 
                 console.error("Firestore Error:", e);
-                if(e.code === 'permission-denied') {
-                    showAlert("Akses ditolak (Permission Denied). Cek Rules Firestore Anda.");
-                } else {
-                    showAlert("Terjadi kesalahan: " + e.message); 
-                }
+                showAlert("Terjadi kesalahan: " + e.message); 
             } finally {
                 btn.disabled = false;
                 btn.innerText = "KIRIM PENDAFTARAN";
             }
         };
 
-        // Login User & Redirect
+        // Login User
         document.getElementById('loginForm').onsubmit = async (e) => {
             e.preventDefault();
             if(!isAuthed) return showAlert("Koneksi belum siap.");
@@ -233,7 +233,7 @@
             }
         };
 
-        // Akses Admin Panel
+        // Panel Admin
         window.accessAdmin = () => {
             if(document.getElementById('adminKey').value === "japara-admin") {
                 document.getElementById('adminAuth').classList.add('hidden');
@@ -244,10 +244,8 @@
             }
         };
 
-        // Fungsi Penampil Data USER di Panel ADMIN
         function loadUsers() {
             if(!isAuthed) return;
-            // Gunakan onSnapshot agar data muncul otomatis tanpa refresh
             onSnapshot(query(usersRef), (snap) => {
                 const list = document.getElementById('userList');
                 list.innerHTML = "";
@@ -279,13 +277,9 @@
                         </div>`;
                     list.appendChild(el);
                 });
-            }, (err) => {
-                console.error("Snapshot error:", err);
-                showAlert("Gagal sinkronisasi data Admin.");
             });
         }
 
-        // Fungsi Admin untuk Menyimpan Link ke User Tertentu
         window.updateLink = async (id) => {
             try {
                 const newLink = document.getElementById(`link-${id}`).value.trim();
